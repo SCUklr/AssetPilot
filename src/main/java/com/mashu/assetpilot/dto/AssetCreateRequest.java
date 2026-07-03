@@ -13,7 +13,7 @@ public class AssetCreateRequest {
     @NotBlank(message = "资产名称不能为空")
     private String name;
 
-    @NotBlank(message = "资产类别不能为空")@NotBlank(message = "资产类别不能为空")
+    @NotBlank(message = "资产类别不能为空")
     private String category;
 
     @NotNull(message = "资产价值不能为空") // BigDecimal 不是字符串，用 @NotNull

@@ -2,7 +2,6 @@ package com.mashu.assetpilot.controller;
 
 import com.mashu.assetpilot.common.Result;
 import com.mashu.assetpilot.dto.AssetCreateRequest;
-import com.mashu.assetpilot.entity.Asset;
 import com.mashu.assetpilot.service.AssetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
