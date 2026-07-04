@@ -2,8 +2,10 @@ package com.mashu.assetpilot.service;
 
 import com.mashu.assetpilot.common.BusinessException;
 import com.mashu.assetpilot.dto.AssetCreateRequest;
+import com.mashu.assetpilot.dto.AssetUpdateRequest;
 import com.mashu.assetpilot.entity.Asset;
 import com.mashu.assetpilot.mapper.AssetMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -33,5 +35,26 @@ public class AssetService {
 
     public boolean deleteById(Long id) {
         return assetMapper.deleteById(id) > 0;
+    }
+
+    public Asset update(Long id, @Valid AssetUpdateRequest request) {
+        // 1. 先查记录存不存在
+        Asset asset = assetMapper.selectById(id);
+        if (asset == null) {
+            throw new BusinessException("资产不存在");
+        }
+
+        // 2. 复制request要修改的字段到asset
+        BeanUtils.copyProperties(request, asset);
+
+        // 3. 必须设置 id
+        asset.setId(id);
+        asset.setUpdatedAt(LocalDateTime.now());
+
+        // 4. 调用Mapper层更新方法
+        assetMapper.updateById(asset);
+
+        // 5. 返回最新数据
+        return assetMapper.selectById(id);
     }
 }

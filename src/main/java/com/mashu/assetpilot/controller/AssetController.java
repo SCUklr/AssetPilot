@@ -2,6 +2,7 @@ package com.mashu.assetpilot.controller;
 
 import com.mashu.assetpilot.common.Result;
 import com.mashu.assetpilot.dto.AssetCreateRequest;
+import com.mashu.assetpilot.dto.AssetUpdateRequest;
 import com.mashu.assetpilot.entity.Asset;
 import com.mashu.assetpilot.service.AssetService;
 import jakarta.validation.Valid;
@@ -33,5 +34,11 @@ public class AssetController {
     public Result<Boolean> deleteById(@PathVariable Long id) { // 删除用布尔值存储
         boolean deleted = assetService.deleteById(id);
         return Result.success(deleted);
+    }
+
+    @PutMapping("/{id}")
+    public Result<Asset> update(@PathVariable Long id, @Valid @RequestBody AssetUpdateRequest request) {
+        Asset updatedAsset = assetService.update(id, request);
+        return Result.success(updatedAsset);
     }
 }
