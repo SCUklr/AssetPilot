@@ -28,4 +28,10 @@ public class AssetController {
         Asset asset = assetService.getById(id); // 调用 Service 层方法
         return Result.success(asset);
     }
+
+    @DeleteMapping("/{id}")
+    public Result<Boolean> deleteById(@PathVariable Long id) { // 删除用布尔值存储
+        boolean deleted = assetService.deleteById(id);
+        return Result.success(deleted);
+    }
 }

@@ -30,4 +30,8 @@ public class AssetService {
     public Asset getById(Long id) {
         return assetMapper.selectById(id); // MyBatis-Plus 自带方法
     }
+
+    public boolean deleteById(Long id) {
+        return assetMapper.deleteById(id) > 0;
+    }
 }
