@@ -26,6 +26,8 @@ public class AssetService {
         asset.setUpdatedAt(LocalDateTime.now());
         assetMapper.insert(asset);
         return asset.getId(); // 插库后 asset.getId() 能拿到自增主键
-
+    }
+    public Asset getById(Long id) {
+        return assetMapper.selectById(id); // MyBatis-Plus 自带方法
     }
 }

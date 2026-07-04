@@ -2,13 +2,11 @@ package com.mashu.assetpilot.controller;
 
 import com.mashu.assetpilot.common.Result;
 import com.mashu.assetpilot.dto.AssetCreateRequest;
+import com.mashu.assetpilot.entity.Asset;
 import com.mashu.assetpilot.service.AssetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController // 返回 JSON，不是视图
 @RequestMapping("/assets") // 这个 Controller 下所有接口前缀都是 /assets
@@ -23,5 +21,11 @@ public class AssetController {
     public Result<Long> create(@Valid @RequestBody AssetCreateRequest request) {
         Long id = assetService.create(request);
         return Result.success(id);
+    }
+
+    @GetMapping("/{id}")
+    public Result<Asset> getById(@PathVariable Long id) { // @PathVariable 的作用是把 URL 路径里的值取出来，传给方法参数。
+        Asset asset = assetService.getById(id); // 调用 Service 层方法
+        return Result.success(asset);
     }
 }
