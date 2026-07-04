@@ -1,7 +1,10 @@
 package com.mashu.assetpilot.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mashu.assetpilot.common.BusinessException;
 import com.mashu.assetpilot.dto.AssetCreateRequest;
+import com.mashu.assetpilot.dto.AssetPageRequest;
 import com.mashu.assetpilot.dto.AssetUpdateRequest;
 import com.mashu.assetpilot.entity.Asset;
 import com.mashu.assetpilot.mapper.AssetMapper;
@@ -56,5 +59,35 @@ public class AssetService {
 
         // 5. 返回最新数据
         return assetMapper.selectById(id);
+    }
+
+    public Page<Asset> page(AssetPageRequest request) {
+        // 1. 创建分页对象
+        Page<Asset> page = new Page<>(request.getPageNum(), request.getPageSize());
+
+        // 2. 创建查询条件构造器
+        QueryWrapper<Asset> wrapper = new QueryWrapper<>();
+
+        // 3. 动态拼接条件：只传了非空的才加条件
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            wrapper.like("name", request.getName());
+        }
+        if (request.getCategory() != null && !request.getCategory().isEmpty()) {
+            // eq：精确匹配
+            wrapper.eq("category", request.getCategory());
+        }
+        if (request.getOwner() != null && !request.getOwner().isEmpty()) {
+            wrapper.eq("owner", request.getOwner());
+        }
+        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+            wrapper.eq("status", request.getStatus());
+        }
+
+        // 4. 按创建时间倒序（新的在前）
+        wrapper.orderByDesc("created_at");
+
+        // 5. 调用 Mapper 的分页查询方法
+        return assetMapper.selectPage(page, wrapper);
+
     }
 }

@@ -1,7 +1,9 @@
 package com.mashu.assetpilot.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mashu.assetpilot.common.Result;
 import com.mashu.assetpilot.dto.AssetCreateRequest;
+import com.mashu.assetpilot.dto.AssetPageRequest;
 import com.mashu.assetpilot.dto.AssetUpdateRequest;
 import com.mashu.assetpilot.entity.Asset;
 import com.mashu.assetpilot.service.AssetService;
@@ -40,5 +42,15 @@ public class AssetController {
     public Result<Asset> update(@PathVariable Long id, @Valid @RequestBody AssetUpdateRequest request) {
         Asset updatedAsset = assetService.update(id, request);
         return Result.success(updatedAsset);
+    }
+
+    /**
+     * 分页查询
+     * @RequestParam：把查询参数 ?pageNum=1&pageSize=10 绑定到对象
+     */
+    @GetMapping("/page")
+    public Result<Page<Asset>> page(AssetPageRequest request) {
+        Page<Asset> page = assetService.page(request);
+        return Result.success(page);
     }
 }
