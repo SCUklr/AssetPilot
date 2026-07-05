@@ -3,6 +3,7 @@ package com.mashu.assetpilot.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mashu.assetpilot.common.BusinessException;
+import com.mashu.assetpilot.dto.AssetChangeEvent;
 import com.mashu.assetpilot.dto.AssetCreateRequest;
 import com.mashu.assetpilot.dto.AssetPageRequest;
 import com.mashu.assetpilot.dto.AssetUpdateRequest;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 public class AssetService {
     private final AssetMapper assetMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final AssetEventProducer assetEventProducer;
 
     public Long create(AssetCreateRequest request) {
         // 业务校验：价值大于零
@@ -77,7 +79,7 @@ public class AssetService {
     }
 
     public Asset update(Long id, @Valid AssetUpdateRequest request) {
-        // 1. 先查记录存不存在
+        // 1. 先查旧记录存不存在
         Asset asset = assetMapper.selectById(id);
         if (asset == null) {
             throw new BusinessException("资产不存在");
@@ -86,17 +88,31 @@ public class AssetService {
         // 2. 复制request要修改的字段到asset
         BeanUtils.copyProperties(request, asset);
 
-        // 3. 必须设置 id
+        // 3. 必须设置 id 和更新时间
         asset.setId(id);
         asset.setUpdatedAt(LocalDateTime.now());
 
-        // 4. 调用Mapper层更新方法
+        // 4. 调用Mapper层更新数据库
         assetMapper.updateById(asset);
 
-        // 更新和删除时，必须把对应缓存清掉，否则会出现数据不一致
+        // 5. 更新和删除时，必须把对应 Redis 缓存清掉，否则会出现数据不一致
         redisTemplate.delete("asset:detail:" + id);
 
-        // 5. 返回最新数据
+        // 6. 发送 Kafka 变更通知（异步）
+        // Builder 写法把字段名直接写在代码里，一眼就能看出每个值对应什么
+        assetEventProducer.sendAssetChangeEvent(
+                AssetChangeEvent.builder()
+                        .assetId(id)
+                        .changeType("UPDATE")
+                        .assetName(asset.getName())
+                        .newStatus(asset.getStatus())
+                        .value(asset.getValue())
+                        .operator("system") // 这里可以改成实际操作人的用户名
+                        .eventTime(LocalDateTime.now())
+                        .build()
+        );
+
+        // 7. 返回最新数据
         return assetMapper.selectById(id);
     }
 
