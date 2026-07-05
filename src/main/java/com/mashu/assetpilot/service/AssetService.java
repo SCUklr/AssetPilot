@@ -11,14 +11,17 @@ import com.mashu.assetpilot.mapper.AssetMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor // Lombok 自动生成构造方法，final 字段会被自动注入
 public class AssetService {
     private final AssetMapper assetMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public Long create(AssetCreateRequest request) {
         // 业务校验：价值大于零
@@ -33,11 +36,44 @@ public class AssetService {
         return asset.getId(); // 插库后 asset.getId() 能拿到自增主键
     }
     public Asset getById(Long id) {
-        return assetMapper.selectById(id); // MyBatis-Plus 自带方法
+        // Redis 手写改造
+        String key = "asset:detail:" + id;
+
+        // 1. 先查 Redis
+        Object cached = redisTemplate.opsForValue().get(key);
+        if (cached instanceof Asset) {
+            return (Asset) cached;
+        }
+
+        // 2. Redis 没有，查 MySQL 数据库
+        Asset asset = assetMapper.selectById(id);
+
+        // 3. 查到了就写回 Redis， 设置 10 分钟过期
+        if (asset != null) {
+            redisTemplate.opsForValue().set(key, asset, Duration.ofMinutes(10));
+        }
+        return asset; // MyBatis-Plus 自带方法
     }
 
     public boolean deleteById(Long id) {
-        return assetMapper.deleteById(id) > 0;
+//        boolean deleted = assetMapper.deleteById(id) > 0;
+//        if (deleted) {
+//            redisTemplate.delete("asset:detail:" + id);
+//        }
+//        return deleted;
+        // 更加正式的写法
+        // 判断非空
+        Asset asset = assetMapper.selectById(id);
+        if (asset == null) {
+            throw new BusinessException("资产不存在"); // 这样 id 不存在时直接返回 500 错误，语义更清晰
+        }
+
+        // 接下来才是正式删除
+        assetMapper.deleteById(id);
+
+        // Redis 同步删除
+        redisTemplate.delete("asset:detail:" + id);
+        return true;
     }
 
     public Asset update(Long id, @Valid AssetUpdateRequest request) {
@@ -56,6 +92,9 @@ public class AssetService {
 
         // 4. 调用Mapper层更新方法
         assetMapper.updateById(asset);
+
+        // 更新和删除时，必须把对应缓存清掉，否则会出现数据不一致
+        redisTemplate.delete("asset:detail:" + id);
 
         // 5. 返回最新数据
         return assetMapper.selectById(id);
@@ -88,6 +127,5 @@ public class AssetService {
 
         // 5. 调用 Mapper 的分页查询方法
         return assetMapper.selectPage(page, wrapper);
-
     }
 }

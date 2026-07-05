@@ -14,7 +14,7 @@ public class BusinessException extends RuntimeException {
 
     public BusinessException(String msg) {
         super(msg);
-        this.code = 500;
+        this.code = 500; // 这样 id 不存在时直接返回 500 错误，语义更清晰
     }
 
     public BusinessException (Integer code, String msg) {

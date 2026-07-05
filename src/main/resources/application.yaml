@@ -8,6 +8,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: assetpilot
     password: AssetPilot_2024
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # password:      # 本地没密码就留空
+      database: 0
 
 # 注意：表不再由 schema.sql 自动创建，改由 SchemaInitializer 在启动时创建
 
